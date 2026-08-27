@@ -1,0 +1,20 @@
+---
+network_admin_user: netadmin
+network_admin_password: "sandbox-only"
+edge_host_sudo_password: "bwops"
+radius_shared_secret: "sandbox-only"
+snmp_community: "sandbox-ro"
+
+ntp_servers:
+  - 127.0.0.1
+
+syslog_server: 127.0.0.1
+dns_servers:
+  - 127.0.0.11
+
+edge_packages:
+  - curl
+  - jq
+
+kds_agent_version: 3.4.1
+pos_gateway_version: 2.9.6

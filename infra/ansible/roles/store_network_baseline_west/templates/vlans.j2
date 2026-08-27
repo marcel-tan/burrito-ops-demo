@@ -1,0 +1,25 @@
+! BurritoWorks WEST store {{ site_id }} ({{ market }}) VLAN configuration
+vlan 110
+ name POS
+!
+vlan 120
+ name KITCHEN
+!
+vlan 130
+ name BOH
+!
+vlan 140
+ name GUEST_WIFI
+!
+interface Vlan110
+ description POS
+ ip address {{ store_prefix | regex_replace('0/24$', '1') }} 255.255.255.0
+ ip access-group POS_IN in
+!
+interface Vlan120
+ description KITCHEN
+ ip access-group KITCHEN_IN in
+!
+interface Vlan140
+ description GUEST_WIFI
+!

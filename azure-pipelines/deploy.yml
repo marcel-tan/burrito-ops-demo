@@ -1,0 +1,42 @@
+# Deploy both services to AKS, environment by environment, from the images built
+# by build-test.yml. Terraform applies are gated on an Azure DevOps environment
+# approval; prod additionally requires the change record in the description.
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: build
+      source: burrito-ops-build-test
+      trigger:
+        branches:
+          include:
+            - main
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  TERRAFORM_VERSION: '1.9.5'
+  HELM_VERSION: 'v3.15.2'
+  IMAGE_TAG: $(resources.pipeline.build.runID)
+
+stages:
+  - template: templates/deploy-environment.yml
+    parameters:
+      environment: dev
+      serviceConnection: bw-azure-dev
+      namespace: burritoworks-dev
+
+  - template: templates/deploy-environment.yml
+    parameters:
+      environment: staging
+      serviceConnection: bw-azure-staging
+      namespace: burritoworks-staging
+      dependsOn: deploy_dev
+
+  - template: templates/deploy-environment.yml
+    parameters:
+      environment: prod
+      serviceConnection: bw-azure-prod
+      namespace: burritoworks-prod
+      dependsOn: deploy_staging

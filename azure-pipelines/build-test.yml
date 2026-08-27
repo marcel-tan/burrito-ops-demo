@@ -1,0 +1,89 @@
+# Build and unit-test both services plus the web front end.
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - services/*
+      - web/*
+      - azure-pipelines/build-test.yml
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  NODE_VERSION: '22.x'
+  PYTHON_VERSION: '3.12'
+
+stages:
+  - stage: build_test
+    displayName: Build and test
+    jobs:
+      - job: order_ahead
+        displayName: order-ahead (Node/TypeScript)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+          - script: npm ci
+            workingDirectory: services/order-ahead
+            displayName: npm ci
+          - script: npm run lint
+            workingDirectory: services/order-ahead
+            displayName: Typecheck
+          - script: npm test
+            workingDirectory: services/order-ahead
+            displayName: Unit tests
+          - script: npm run build
+            workingDirectory: services/order-ahead
+            displayName: Build
+          - task: Docker@2
+            displayName: Build image
+            inputs:
+              command: build
+              repository: burritoworks/order-ahead
+              dockerfile: services/order-ahead/Dockerfile
+              buildContext: services/order-ahead
+              tags: $(Build.BuildNumber)
+
+      - job: catering
+        displayName: catering (Python/Flask)
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt -r requirements-dev.txt
+            workingDirectory: services/catering
+            displayName: Install dependencies
+          - script: python -m pytest
+            workingDirectory: services/catering
+            displayName: Unit tests
+          - task: Docker@2
+            displayName: Build image
+            inputs:
+              command: build
+              repository: burritoworks/catering
+              dockerfile: services/catering/Dockerfile
+              buildContext: services/catering
+              tags: $(Build.BuildNumber)
+
+      - job: web
+        displayName: web (Angular)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+          - script: npm ci
+            workingDirectory: web
+            displayName: npm ci
+          - script: npm run build -- --configuration production
+            workingDirectory: web
+            displayName: Build

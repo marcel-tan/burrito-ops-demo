@@ -1,0 +1,9 @@
+apiVersion: v2
+name: catering
+description: BurritoWorks catering API
+type: application
+version: 0.2.4
+appVersion: "0.9.7"
+maintainers:
+  - name: platform-engineering
+    email: platform-eng@burritoworks.example

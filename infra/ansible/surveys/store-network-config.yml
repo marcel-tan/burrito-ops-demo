@@ -1,0 +1,33 @@
+---
+name: "Store Network Config"
+description: "Pick the stores to configure."
+spec:
+  - question_name: "Region"
+    question_description: "Which region are you configuring?"
+    variable: target_region
+    type: multiplechoice
+    choices:
+      - west
+      - central
+      - east
+    required: true
+    default: west
+  - question_name: "Store limit"
+    question_description: "Inventory limit, e.g. store214-rtr or central_store_edge_routers"
+    variable: store_limit
+    type: text
+    required: true
+  - question_name: "Change ticket"
+    question_description: "Azure Boards work item for this change."
+    variable: change_ticket
+    type: text
+    required: true
+  - question_name: "Check mode only"
+    question_description: "Run without applying changes."
+    variable: check_mode_only
+    type: multiplechoice
+    choices:
+      - "yes"
+      - "no"
+    default: "yes"
+    required: true

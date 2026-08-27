@@ -1,0 +1,30 @@
+---
+name: "Store Edge Host Baseline"
+description: "Baseline the KDS and POS gateway hosts at selected stores."
+spec:
+  - question_name: "Store limit"
+    question_description: "Inventory limit, e.g. store100-kds or west_store_kitchen_hosts"
+    variable: store_limit
+    type: text
+    required: true
+  - question_name: "Host role"
+    variable: edge_role_filter
+    type: multiplechoice
+    choices:
+      - kitchen-display
+      - pos-gateway
+      - both
+    default: both
+    required: true
+  - question_name: "Change ticket"
+    variable: change_ticket
+    type: text
+    required: true
+  - question_name: "Reboot after baseline"
+    variable: reboot_after
+    type: multiplechoice
+    choices:
+      - "yes"
+      - "no"
+    default: "no"
+    required: true

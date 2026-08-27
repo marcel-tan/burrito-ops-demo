@@ -1,0 +1,23 @@
+---
+job_template:
+  name: "Store Edge Host Baseline"
+  description: "Package, config, certificate and agent baseline for KDS and POS gateway hosts."
+  job_type: run
+  organization: BurritoWorks
+  project: burrito-ops
+  playbook: infra/ansible/playbooks/edge_baseline.yml
+  inventory: "Store Fleet"
+  credentials:
+    - "Store Edge Host (SSH)"
+    - "BurritoWorks Vault"
+  execution_environment: "burritoworks-network-ee"
+  forks: 20
+  ask_limit_on_launch: true
+  ask_variables_on_launch: true
+  ask_diff_mode_on_launch: true
+  survey_enabled: true
+  survey_spec_file: ../surveys/store-edge-baseline.yml
+  become_enabled: true
+  allow_simultaneous: false
+  notification_templates_error:
+    - "Store Systems Teams Channel"

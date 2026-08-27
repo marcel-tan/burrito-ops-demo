@@ -1,0 +1,112 @@
+openapi: 3.0.3
+info:
+  title: BurritoWorks Order Ahead API
+  version: 1.4.2
+  description: Digital ordering API backing the BurritoWorks mobile and web order-ahead experience.
+servers:
+  - url: https://order-ahead.burritoworks.example
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is alive
+  /readyz:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Service is ready to serve traffic
+  /api/menu:
+    get:
+      summary: List menu items
+      responses:
+        '200':
+          description: Menu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MenuItem'
+  /api/cart/price:
+    post:
+      summary: Price a cart without placing an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cart'
+      responses:
+        '200':
+          description: Cart totals
+        '400':
+          description: Invalid cart
+  /api/orders:
+    post:
+      summary: Place an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Cart'
+                - type: object
+                  required: [storeId]
+                  properties:
+                    storeId:
+                      type: string
+      responses:
+        '201':
+          description: Order accepted
+        '400':
+          description: Invalid order
+  /api/orders/{id}:
+    get:
+      summary: Fetch an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order
+        '404':
+          description: Not found
+components:
+  schemas:
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [entree, side, drink]
+        priceCents:
+          type: integer
+    Cart:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            required: [itemId, quantity]
+            properties:
+              itemId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1

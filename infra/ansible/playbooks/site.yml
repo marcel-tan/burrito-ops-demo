@@ -1,0 +1,6 @@
+---
+- name: Store fleet configuration
+  ansible.builtin.import_playbook: network_config.yml
+
+- name: Store edge host baseline
+  ansible.builtin.import_playbook: edge_baseline.yml

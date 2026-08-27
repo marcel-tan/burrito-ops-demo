@@ -1,0 +1,6 @@
+---
+edge_role: pos-gateway
+edge_service_name: pos-gateway
+edge_service_port: 8282
+cert_common_name_suffix: pos.sandbox.burritoworks.example
+pci_scope: true

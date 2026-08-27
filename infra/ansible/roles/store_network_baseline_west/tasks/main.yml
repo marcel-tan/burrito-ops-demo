@@ -1,0 +1,47 @@
+---
+- name: Render VLAN configuration
+  ansible.builtin.template:
+    src: vlans.j2
+    dest: "{{ config_staging_dir }}/{{ inventory_hostname }}-vlans.cfg"
+    mode: "0644"
+  delegate_to: localhost
+
+- name: Render ACL configuration
+  ansible.builtin.template:
+    src: acls.j2
+    dest: "{{ config_staging_dir }}/{{ inventory_hostname }}-acls.cfg"
+    mode: "0644"
+  delegate_to: localhost
+
+- name: Render firewall configuration
+  ansible.builtin.template:
+    src: firewall.j2
+    dest: "{{ config_staging_dir }}/{{ inventory_hostname }}-firewall.cfg"
+    mode: "0644"
+  delegate_to: localhost
+
+# FIXME: this is how we have always pushed config. It reloads the device
+# every run whether or not anything changed, so it can only be run in the
+# Sunday 02:00 window.
+- name: Push VLAN and ACL config to the device
+  ansible.builtin.shell: |
+    sshpass -p '{{ network_admin_password }}' scp -o StrictHostKeyChecking=no \
+      {{ config_staging_dir }}/{{ inventory_hostname }}-vlans.cfg \
+      {{ config_staging_dir }}/{{ inventory_hostname }}-acls.cfg \
+      {{ config_staging_dir }}/{{ inventory_hostname }}-firewall.cfg \
+      {{ network_admin_user }}@{{ ansible_host }}:flash:/
+    sshpass -p '{{ network_admin_password }}' ssh -o StrictHostKeyChecking=no \
+      {{ network_admin_user }}@{{ ansible_host }} "copy flash:{{ inventory_hostname }}-vlans.cfg running-config"
+    sshpass -p '{{ network_admin_password }}' ssh -o StrictHostKeyChecking=no \
+      {{ network_admin_user }}@{{ ansible_host }} "copy flash:{{ inventory_hostname }}-acls.cfg running-config"
+    sshpass -p '{{ network_admin_password }}' ssh -o StrictHostKeyChecking=no \
+      {{ network_admin_user }}@{{ ansible_host }} "copy flash:{{ inventory_hostname }}-firewall.cfg running-config"
+  delegate_to: localhost
+  changed_when: true
+
+- name: Save running config
+  ansible.builtin.shell: >
+    sshpass -p '{{ network_admin_password }}' ssh -o StrictHostKeyChecking=no
+    {{ network_admin_user }}@{{ ansible_host }} "write memory"
+  delegate_to: localhost
+  changed_when: true

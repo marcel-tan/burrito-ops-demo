@@ -1,0 +1,18 @@
+replicaCount: 2
+
+image:
+  # points at whatever the last build pushed
+  tag: latest
+  pullPolicy: Always
+
+env:
+  SERVICE_NAME: order-ahead
+  LOG_LEVEL: info
+  CATERING_URL: http://catering-catering.burritoworks-staging.svc.cluster.local
+
+# limits removed during the March load test to stop OOMKills, never restored
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits: null

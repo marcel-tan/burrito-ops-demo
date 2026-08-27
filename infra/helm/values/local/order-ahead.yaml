@@ -1,0 +1,23 @@
+# Values used by scripts/demo/up.sh against the local kind cluster.
+replicaCount: 1
+
+image:
+  repository: burritoworks/order-ahead
+  tag: local
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  nodePort: 30080
+
+env:
+  SERVICE_NAME: order-ahead
+  LOG_LEVEL: debug
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

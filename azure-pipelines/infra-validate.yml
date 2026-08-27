@@ -1,0 +1,137 @@
+# Validate every infrastructure layer on pull requests: Terraform fmt/validate
+# and plan, Helm lint/template, Ansible lint and a check-mode run, and the
+# platform policy suite from policy/.
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/*
+      - policy/*
+      - azure-pipelines/infra-validate.yml
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  TERRAFORM_VERSION: '1.9.5'
+  CONFTEST_VERSION: '0.55.0'
+  HELM_VERSION: 'v3.15.2'
+
+stages:
+  - stage: terraform
+    displayName: Terraform
+    jobs:
+      - job: validate_plan
+        strategy:
+          matrix:
+            dev:
+              ENVIRONMENT: dev
+              SERVICE_CONNECTION: bw-azure-dev
+            staging:
+              ENVIRONMENT: staging
+              SERVICE_CONNECTION: bw-azure-staging
+            prod:
+              ENVIRONMENT: prod
+              SERVICE_CONNECTION: bw-azure-prod
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: $(TERRAFORM_VERSION)
+          - script: terraform fmt -check -recursive
+            workingDirectory: infra/terraform
+            displayName: terraform fmt -check
+          - task: TerraformTaskV4@4
+            displayName: terraform init
+            inputs:
+              provider: azurerm
+              command: init
+              workingDirectory: infra/terraform/envs/$(ENVIRONMENT)
+              backendServiceArm: $(SERVICE_CONNECTION)
+              backendAzureRmResourceGroupName: rg-burritoworks-tfstate
+              backendAzureRmStorageAccountName: stbwplatformtfstate
+              backendAzureRmContainerName: tfstate
+              backendAzureRmKey: $(ENVIRONMENT).tfstate
+          - task: TerraformTaskV4@4
+            displayName: terraform validate
+            inputs:
+              provider: azurerm
+              command: validate
+              workingDirectory: infra/terraform/envs/$(ENVIRONMENT)
+          - task: TerraformTaskV4@4
+            displayName: terraform plan
+            inputs:
+              provider: azurerm
+              command: plan
+              workingDirectory: infra/terraform/envs/$(ENVIRONMENT)
+              environmentServiceNameAzureRM: $(SERVICE_CONNECTION)
+              commandOptions: -var-file=$(ENVIRONMENT).tfvars -lock=false -out=tfplan
+          - publish: infra/terraform/envs/$(ENVIRONMENT)/tfplan
+            artifact: tfplan-$(ENVIRONMENT)
+
+  - stage: helm
+    displayName: Helm
+    dependsOn: []
+    jobs:
+      - job: lint_template
+        steps:
+          - task: HelmInstaller@1
+            inputs:
+              helmVersionToInstall: $(HELM_VERSION)
+          - script: helm lint infra/helm/charts/order-ahead infra/helm/charts/catering
+            displayName: helm lint
+          - script: |
+              set -e
+              for env in dev staging prod; do
+                for chart in order-ahead catering; do
+                  helm template "$chart" "infra/helm/charts/$chart" \
+                    -f "infra/helm/values/$env/$chart.yaml" > /dev/null
+                done
+              done
+            displayName: helm template (all environments)
+
+  - stage: ansible
+    displayName: Ansible
+    dependsOn: []
+    jobs:
+      - job: lint_check
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.12'
+          - script: pip install ansible-core ansible-lint
+            displayName: Install Ansible
+          - script: ansible-lint playbooks/ roles/
+            workingDirectory: infra/ansible
+            displayName: ansible-lint
+          - script: |
+              ansible-inventory -i inventories/stores/hosts.yml --list > /dev/null
+              ansible-playbook -i inventories/stores/hosts.yml playbooks/site.yml \
+                --check --diff --limit store_edge_routers[0:24]
+            workingDirectory: infra/ansible
+            displayName: ansible-playbook --check (sample of 25 sites)
+
+  - stage: policy
+    displayName: Policy as code
+    dependsOn: []
+    jobs:
+      - job: conftest
+        steps:
+          - task: HelmInstaller@1
+            inputs:
+              helmVersionToInstall: $(HELM_VERSION)
+          - script: |
+              set -e
+              curl -sSL -o /tmp/conftest.tar.gz \
+                "https://github.com/open-policy-agent/conftest/releases/download/v$(CONFTEST_VERSION)/conftest_$(CONFTEST_VERSION)_Linux_x86_64.tar.gz"
+              tar -xzf /tmp/conftest.tar.gz -C /tmp conftest
+              sudo mv /tmp/conftest /usr/local/bin/conftest
+            displayName: Install conftest
+          - script: ./scripts/policy_check.sh
+            displayName: Platform policy suite

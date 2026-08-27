@@ -1,0 +1,22 @@
+---
+# Per-site ACL, hand-maintained since 2019. Every new store gets a copy of the
+# nearest store's file with the addresses edited.
+site_id: '177'
+market: seattle
+region: west
+
+store_prefix: 10.100.177.0/24
+
+acls:
+  POS_IN:
+    - permit tcp 10.100.177.0 0.0.0.255 host 10.10.0.44 eq 443
+    - permit tcp 10.100.177.0 0.0.0.255 host 10.10.0.45 eq 8443
+    - permit udp 10.100.177.0 0.0.0.255 host 10.10.0.53 eq 53
+    - deny ip any any log
+  KITCHEN_IN:
+    - permit tcp 10.100.177.0 0.0.0.255 host 10.10.0.60 eq 443
+    - permit udp 10.100.177.0 0.0.0.255 host 10.10.0.11 eq 123
+    - deny ip any any log
+  GUEST_WIFI_IN:
+    - deny ip any 10.0.0.0/8
+    - permit ip any any

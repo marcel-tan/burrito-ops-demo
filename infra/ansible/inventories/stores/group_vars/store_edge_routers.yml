@@ -1,0 +1,17 @@
+---
+device_platform: ios
+config_staging_dir: /var/tmp/burritoworks-netconfig
+
+vlans:
+  - id: 10
+    name: POS
+  - id: 20
+    name: KITCHEN
+  - id: 30
+    name: BOH
+  - id: 40
+    name: GUEST_WIFI
+  - id: 50
+    name: DIGITAL_MENU
+
+firewall_default_policy: deny

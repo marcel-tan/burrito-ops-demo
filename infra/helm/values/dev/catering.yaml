@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: burritoworks/catering
+  tag: 0.9.7
+
+env:
+  SERVICE_NAME: catering
+  LOG_LEVEL: debug
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 250m
+    memory: 192Mi

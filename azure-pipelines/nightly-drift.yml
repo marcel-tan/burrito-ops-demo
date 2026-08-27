@@ -1,0 +1,94 @@
+# Nightly drift detection: compare the running estate against what the repo
+# declares and open a work item when they disagree.
+trigger: none
+pr: none
+
+schedules:
+  - cron: '0 9 * * *'
+    displayName: Nightly at 02:00 America/Los_Angeles
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  TERRAFORM_VERSION: '1.9.5'
+  HELM_VERSION: 'v3.15.2'
+
+jobs:
+  - job: detect_drift
+    displayName: Detect drift
+    steps:
+      - task: TerraformInstaller@1
+        inputs:
+          terraformVersion: $(TERRAFORM_VERSION)
+      - task: HelmInstaller@1
+        inputs:
+          helmVersionToInstall: $(HELM_VERSION)
+
+      - task: AzureCLI@2
+        displayName: terraform plan -detailed-exitcode (all environments)
+        inputs:
+          azureSubscription: bw-azure-prod
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            set -uo pipefail
+            DRIFT=0
+            for env in dev staging prod; do
+              pushd "infra/terraform/envs/$env" >/dev/null
+              terraform init -input=false
+              terraform plan -input=false -lock=false -detailed-exitcode \
+                -var-file="$env.tfvars" -out="tfplan-$env"
+              case $? in
+                0) echo "$env: no drift" ;;
+                2) echo "$env: DRIFT"; DRIFT=1 ;;
+                *) echo "$env: plan failed"; exit 1 ;;
+              esac
+              popd >/dev/null
+            done
+            echo "##vso[task.setvariable variable=TerraformDrift]$DRIFT"
+
+      - task: AzureCLI@2
+        displayName: Kubernetes and store host drift
+        inputs:
+          azureSubscription: bw-azure-prod
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            az aks get-credentials --resource-group rg-burritoworks-platform-prod \
+              --name aks-prod-eastus2 --overwrite-existing
+            ./scripts/check_drift.sh
+            echo "##vso[task.setvariable variable=EstateDrift]$?"
+
+      - publish: .drift/drift-report.md
+        artifact: drift-report
+        condition: always()
+
+      - script: |
+          set -e
+          if [ "$(TerraformDrift)" = "0" ] && [ "$(EstateDrift)" = "0" ]; then
+            echo "no drift, nothing to file"
+            exit 0
+          fi
+          az boards work-item create \
+            --title "Infrastructure drift detected $(Build.BuildNumber)" \
+            --type Bug --area "Platform Engineering" \
+            --description "$(cat .drift/drift-report.md)" \
+            --fields "Microsoft.VSTS.Common.Priority=2" \
+            --organization "$(System.TeamFoundationCollectionUri)" \
+            --project "$(System.TeamProject)"
+        displayName: File a work item when drift is found
+        condition: always()
+        env:
+          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+      - script: |
+          if [ "$(TerraformDrift)" != "0" ] || [ "$(EstateDrift)" != "0" ]; then
+            echo "##vso[task.complete result=Failed;]drift detected"
+          fi
+        displayName: Fail the run when drift is found
+        condition: always()

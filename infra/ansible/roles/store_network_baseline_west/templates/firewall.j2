@@ -1,0 +1,10 @@
+! BurritoWorks WEST store {{ site_id }} zone firewall
+zone security STORE
+zone security WAN
+!
+zone-pair security STORE-TO-WAN source STORE destination WAN
+ service-policy type inspect STORE_TO_WAN_POLICY
+!
+zone-pair security WAN-TO-STORE source WAN destination STORE
+ service-policy type inspect WAN_TO_STORE_POLICY
+!

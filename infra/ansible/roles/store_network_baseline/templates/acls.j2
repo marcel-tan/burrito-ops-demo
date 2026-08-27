@@ -1,0 +1,9 @@
+! BurritoWorks store {{ site_id }} ACLs
+{% for name, rules in acls.items() %}
+no ip access-list extended {{ name }}
+ip access-list extended {{ name }}
+{% for rule in rules %}
+ {{ rule }}
+{% endfor %}
+!
+{% endfor %}

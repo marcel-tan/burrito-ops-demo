@@ -1,0 +1,68 @@
+---
+- name: Refresh the package index
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+
+# FIXME: unpinned. A store host built today gets different package versions
+# than one built last month, which is how store 214 ended up on a curl that
+# does not trust our internal CA.
+- name: Install edge packages
+  ansible.builtin.apt:
+    name: "{{ edge_packages }}"
+    state: latest
+
+- name: Create BurritoWorks directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ edge_config_dir }}"
+    - "{{ edge_cert_dir }}"
+    - /var/log/burritoworks
+
+- name: Render the edge agent configuration
+  ansible.builtin.template:
+    src: agent.conf.j2
+    dest: "{{ edge_config_dir }}/agent.conf"
+    mode: "0644"
+
+# FIXME: the "cert" is generated on every run, so the file changes every run
+# and every run looks like a change.
+- name: Deploy the store certificate
+  ansible.builtin.shell: |
+    openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+      -subj "/CN=store{{ site_id }}.{{ cert_common_name_suffix }}" \
+      -keyout {{ edge_cert_dir }}/store.key \
+      -out {{ edge_cert_dir }}/store.crt 2>/dev/null
+    chmod 600 {{ edge_cert_dir }}/store.key
+  changed_when: true
+
+- name: Record the deployment in the MOTD
+  ansible.builtin.shell: >
+    echo "BurritoWorks {{ edge_role }} store {{ site_id }} configured {{ ansible_date_time.iso8601 | default('unknown') }}"
+    >> /etc/motd
+  changed_when: true
+
+- name: Install the edge agent stub
+  ansible.builtin.copy:
+    src: edge_agent.py
+    dest: /usr/local/bin/burritoworks-edge-agent
+    mode: "0755"
+
+# FIXME: no service manager on these hosts yet, so we nohup it. Two runs means
+# two agents fighting over the port.
+- name: Start the edge agent
+  ansible.builtin.shell: >
+    nohup /usr/local/bin/burritoworks-edge-agent
+    --port {{ edge_service_port }}
+    --config {{ edge_config_dir }}/agent.conf
+    >> /var/log/burritoworks/agent.log 2>&1 &
+  changed_when: true
+
+- name: Wait for the edge agent to answer
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ edge_service_port }}"
+    timeout: 20

@@ -1,0 +1,14 @@
+---
+- name: Configure store edge routers (non-West regions)
+  hosts: central_store_edge_routers:east_store_edge_routers
+  gather_facts: false
+  serial: 25
+  roles:
+    - role: store_network_baseline
+
+- name: Configure store edge routers (West region)
+  hosts: west_store_edge_routers
+  gather_facts: false
+  serial: 25
+  roles:
+    - role: store_network_baseline_west

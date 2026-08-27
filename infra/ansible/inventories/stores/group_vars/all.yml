@@ -1,0 +1,26 @@
+---
+# Shared store-fleet variables.
+# FIXME: these belong in an AAP credential / vault lookup, not in git.
+network_admin_user: netadmin
+network_admin_password: "St0reN3t!2023"
+edge_host_sudo_password: "Burrito-Edge-2023"
+radius_shared_secret: "r4d1us-shared-2022"
+snmp_community: "bwstores-ro"
+
+ntp_servers:
+  - 10.10.0.11
+  - 10.10.0.12
+
+syslog_server: 10.10.0.31
+dns_servers:
+  - 10.10.0.53
+  - 10.10.1.53
+
+edge_packages:
+  - chrony
+  - curl
+  - jq
+  - rsyslog
+
+kds_agent_version: 3.4.1
+pos_gateway_version: 2.9.6

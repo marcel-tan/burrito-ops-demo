@@ -1,0 +1,78 @@
+<header>
+  <h1>BurritoWorks</h1>
+  <p>Order ahead and catering, one counter.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Order ahead</h2>
+    <p class="error" *ngIf="orderAheadError">{{ orderAheadError }}</p>
+
+    <label>
+      Store
+      <input type="text" [(ngModel)]="storeId" name="storeId" />
+    </label>
+
+    <table *ngIf="menu.length">
+      <tr *ngFor="let item of menu">
+        <td>{{ item.name }}</td>
+        <td class="price">{{ money(item.priceCents) }}</td>
+        <td>
+          <input
+            type="number"
+            min="0"
+            [(ngModel)]="quantities[item.id]"
+            [name]="'qty-' + item.id"
+            (change)="priceCart()"
+          />
+        </td>
+      </tr>
+    </table>
+
+    <div class="totals" *ngIf="cartPrice">
+      <div>Subtotal <span>{{ money(cartPrice.subtotalCents) }}</span></div>
+      <div>Tax <span>{{ money(cartPrice.taxCents) }}</span></div>
+      <div class="grand">Total <span>{{ money(cartPrice.totalCents) }}</span></div>
+    </div>
+
+    <button (click)="placeOrder()" [disabled]="!cartLines.length">Place order</button>
+
+    <p class="ok" *ngIf="order">
+      Order {{ order.id }} is {{ order.status }} — {{ money(order.totalCents) }}
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Catering</h2>
+    <p class="error" *ngIf="cateringError">{{ cateringError }}</p>
+
+    <label>
+      Package
+      <select [(ngModel)]="selectedPackage" name="package">
+        <option *ngFor="let pkg of packages" [value]="pkg.id">
+          {{ pkg.name }} — {{ money(pkg.per_guest_cents) }}/guest (min {{ pkg.min_guests }})
+        </option>
+      </select>
+    </label>
+
+    <label>
+      Guests
+      <input type="number" min="1" [(ngModel)]="guests" name="guests" />
+    </label>
+
+    <label class="inline">
+      <input type="checkbox" [(ngModel)]="delivery" name="delivery" />
+      Delivery
+    </label>
+
+    <button (click)="getQuote()" [disabled]="!selectedPackage">Get quote</button>
+
+    <div class="totals" *ngIf="quote">
+      <div>Subtotal <span>{{ money(quote.subtotal_cents) }}</span></div>
+      <div>Delivery <span>{{ money(quote.delivery_cents) }}</span></div>
+      <div>Discount <span>-{{ money(quote.discount_cents) }}</span></div>
+      <div>Tax <span>{{ money(quote.tax_cents) }}</span></div>
+      <div class="grand">Total <span>{{ money(quote.total_cents) }}</span></div>
+    </div>
+  </section>
+</main>

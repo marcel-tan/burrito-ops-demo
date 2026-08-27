@@ -1,0 +1,3 @@
+openssh-clients [platform:rpm]
+sshpass [platform:rpm]
+openssl [platform:rpm]

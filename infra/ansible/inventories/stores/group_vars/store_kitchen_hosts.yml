@@ -1,0 +1,6 @@
+---
+ansible_user: bwops
+edge_role: kitchen-display
+edge_service_name: kds-agent
+edge_service_port: 8181
+cert_common_name_suffix: kds.stores.burritoworks.example

@@ -1,0 +1,31 @@
+name: burrito-ops-sandbox
+
+# Three SSH-enabled containers standing in for store edge hosts, so the
+# Ansible/AAP layer is runnable locally. Matches inventories/sandbox/hosts.yml.
+services:
+  store100-kds:
+    build: ./store-host
+    image: burritoworks/store-host:local
+    container_name: bw-store100-kds
+    hostname: store100-kds
+    ports:
+      - "2201:22"
+      - "18181:8181"
+
+  store201-kds:
+    build: ./store-host
+    image: burritoworks/store-host:local
+    container_name: bw-store201-kds
+    hostname: store201-kds
+    ports:
+      - "2202:22"
+      - "18182:8181"
+
+  store301-pos:
+    build: ./store-host
+    image: burritoworks/store-host:local
+    container_name: bw-store301-pos
+    hostname: store301-pos
+    ports:
+      - "2203:22"
+      - "18283:8282"

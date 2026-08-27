@@ -1,0 +1,20 @@
+! BurritoWorks store {{ site_id }} ({{ market }}) VLAN configuration
+! rendered by ansible role store_network_baseline
+{% for vlan in vlans %}
+vlan {{ vlan.id }}
+ name {{ vlan.name }}
+!
+{% endfor %}
+interface Vlan10
+ description POS
+ ip address {{ store_prefix | regex_replace('0/24$', '1') }} 255.255.255.0
+ ip access-group POS_IN in
+!
+interface Vlan20
+ description KITCHEN
+ ip access-group KITCHEN_IN in
+!
+interface Vlan40
+ description GUEST_WIFI
+ ip access-group GUEST_WIFI_IN in
+!

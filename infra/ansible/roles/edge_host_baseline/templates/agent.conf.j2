@@ -1,0 +1,14 @@
+# BurritoWorks edge agent configuration
+# rendered by ansible role edge_host_baseline
+role={{ edge_role }}
+log_level={{ edge_log_level }}
+site_id={{ site_id }}
+market={{ market }}
+region={{ region }}
+listen_port={{ edge_service_port }}
+syslog_server={{ syslog_server }}
+cert_path={{ edge_cert_dir }}/store.crt
+key_path={{ edge_cert_dir }}/store.key
+{% for server in ntp_servers %}
+ntp_server={{ server }}
+{% endfor %}

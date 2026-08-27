@@ -1,0 +1,133 @@
+:host {
+  display: block;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #26211c;
+  background: #fdf8f2;
+  min-height: 100vh;
+}
+
+header {
+  padding: 1.5rem 2rem;
+  background: #8c2f1f;
+  color: #fff;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+header p {
+  margin: 0.25rem 0 0;
+  opacity: 0.85;
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 1100px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e8ddd0;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+label.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+input[type='text'],
+input[type='number'],
+select {
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d6c8b7;
+  border-radius: 6px;
+  font: inherit;
+}
+
+label.inline input {
+  margin: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+td {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f0e7db;
+}
+
+td.price {
+  text-align: right;
+  padding-right: 1rem;
+  color: #6b6055;
+}
+
+td input {
+  width: 4.5rem;
+}
+
+.totals {
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.totals div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+}
+
+.totals .grand {
+  font-weight: 600;
+  border-top: 1px solid #e8ddd0;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+button {
+  background: #8c2f1f;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #cbbfb2;
+  cursor: default;
+}
+
+.error {
+  color: #a4271a;
+  font-size: 0.9rem;
+}
+
+.ok {
+  color: #2c6b3f;
+  font-size: 0.9rem;
+}

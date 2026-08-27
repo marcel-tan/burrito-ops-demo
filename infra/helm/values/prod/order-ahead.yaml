@@ -1,0 +1,29 @@
+replicaCount: 6
+
+image:
+  repository: burritoworks/order-ahead
+  tag: 1.4.1
+  pullPolicy: IfNotPresent
+
+env:
+  SERVICE_NAME: order-ahead
+  LOG_LEVEL: warn
+  CATERING_URL: http://catering-catering.burritoworks-prod.svc.cluster.local
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 1Gi
+
+# disabled during the 2024 promo incident because the readiness probe was
+# flapping under load and taking pods out of rotation
+probes:
+  liveness:
+    enabled: false
+    path: /healthz
+  readiness:
+    enabled: false
+    path: /readyz

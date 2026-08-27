@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+  repository: burritoworks/order-ahead
+  tag: 1.4.2
+
+env:
+  SERVICE_NAME: order-ahead
+  LOG_LEVEL: debug
+  CATERING_URL: http://catering-catering.burritoworks-dev.svc.cluster.local
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 250m
+    memory: 192Mi

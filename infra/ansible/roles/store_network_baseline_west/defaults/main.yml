@@ -1,0 +1,5 @@
+---
+config_staging_dir: /var/tmp/burritoworks-netconfig
+firewall_default_policy: deny
+vlans: []
+acls: {}

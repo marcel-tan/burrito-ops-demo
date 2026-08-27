@@ -1,0 +1,10 @@
+---
+edge_packages:
+  - curl
+  - jq
+edge_service_name: kds-agent
+edge_log_level: info
+edge_service_port: 8181
+edge_config_dir: /etc/burritoworks
+edge_cert_dir: /etc/burritoworks/certs
+cert_common_name_suffix: stores.burritoworks.example

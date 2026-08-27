@@ -1,0 +1,36 @@
+replicaCount: 2
+
+image:
+  repository: burritoworks/order-ahead
+  tag: 1.4.2
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+env:
+  SERVICE_NAME: order-ahead
+  LOG_LEVEL: info
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+  readiness:
+    enabled: true
+    path: /readyz
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}

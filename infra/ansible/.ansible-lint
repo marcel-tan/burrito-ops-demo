@@ -1,0 +1,9 @@
+profile: production
+
+exclude_paths:
+  - inventories/sandbox/
+
+skip_list:
+  # Role variables predate the convention and are referenced from AAP job
+  # templates and surveys by their current names; renaming them is PLAT-436.
+  - var-naming[no-role-prefix]

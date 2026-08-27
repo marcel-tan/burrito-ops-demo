@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: BurritoWorks Catering API
+  version: 0.9.7
+  description: Catering quotes and orders for BurritoWorks restaurants.
+servers:
+  - url: https://catering.burritoworks.example
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is alive
+  /readyz:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Service is ready
+  /api/packages:
+    get:
+      summary: List catering packages
+      responses:
+        '200':
+          description: Packages
+  /api/quotes:
+    post:
+      summary: Quote a catering order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '200':
+          description: Quote
+        '400':
+          description: Invalid quote request
+  /api/orders:
+    post:
+      summary: Place a catering order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/QuoteRequest'
+                - type: object
+                  required: [store_id, event_at]
+                  properties:
+                    store_id:
+                      type: string
+                    event_at:
+                      type: string
+                      format: date-time
+      responses:
+        '201':
+          description: Order accepted
+        '400':
+          description: Invalid order
+  /api/orders/{order_id}:
+    get:
+      summary: Fetch a catering order
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order
+        '404':
+          description: Not found
+components:
+  schemas:
+    QuoteRequest:
+      type: object
+      required: [package_id, guests]
+      properties:
+        package_id:
+          type: string
+          enum: [burrito-bar, taco-bar, bowl-bar]
+        guests:
+          type: integer
+          minimum: 1
+        delivery:
+          type: boolean
+          default: true

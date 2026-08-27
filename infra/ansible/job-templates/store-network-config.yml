@@ -1,0 +1,27 @@
+---
+# Ansible Automation Platform job template definition.
+# Applied with the ansible.controller collection or the AAP API; kept in git so
+# the template itself is reviewed like the rest of the fleet configuration.
+job_template:
+  name: "Store Network Config"
+  description: "VLAN, ACL and firewall configuration for store edge routers."
+  job_type: run
+  organization: BurritoWorks
+  project: burrito-ops
+  playbook: infra/ansible/playbooks/network_config.yml
+  inventory: "Store Fleet"
+  credentials:
+    - "Store Network Admin (SSH)"
+  execution_environment: "burritoworks-network-ee"
+  forks: 20
+  limit: ""
+  job_tags: ""
+  ask_limit_on_launch: true
+  ask_variables_on_launch: true
+  ask_diff_mode_on_launch: true
+  survey_enabled: true
+  survey_spec_file: ../surveys/store-network-config.yml
+  become_enabled: false
+  allow_simultaneous: false
+  notification_templates_error:
+    - "Network Engineering Teams Channel"

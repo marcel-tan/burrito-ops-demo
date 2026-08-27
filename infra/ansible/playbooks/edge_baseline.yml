@@ -1,0 +1,8 @@
+---
+- name: Baseline store edge Linux hosts
+  hosts: store_kitchen_hosts:store_pos_gateways
+  gather_facts: true
+  become: true
+  serial: 20
+  roles:
+    - role: edge_host_baseline

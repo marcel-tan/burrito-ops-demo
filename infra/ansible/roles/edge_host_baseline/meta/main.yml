@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  role_name: edge_host_baseline
+  author: platform-engineering
+  description: Baseline configuration for BurritoWorks store edge Linux hosts (KDS and POS gateway).
+  license: proprietary
+  min_ansible_version: "2.14"
+dependencies: []

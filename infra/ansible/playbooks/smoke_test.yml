@@ -1,0 +1,17 @@
+---
+- name: Smoke test store edge hosts
+  hosts: store_kitchen_hosts:store_pos_gateways
+  gather_facts: false
+  tasks:
+    - name: Check that the edge agent answers its health endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ edge_service_port }}/healthz"
+        return_content: true
+      register: agent_health
+      until: agent_health.status == 200
+      retries: 5
+      delay: 3
+
+    - name: Show the agent identity
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} -> {{ agent_health.content }}"
