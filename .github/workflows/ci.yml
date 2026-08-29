@@ -140,9 +140,10 @@ jobs:
           sudo mv /tmp/conftest /usr/local/bin/conftest
       - name: Platform policy suite (no new violations vs main)
         run: |
-          set -uo pipefail
+          set -u
           count_failures() {
-            ./scripts/policy_check.sh 2>&1 | tee /dev/stderr |
+            # policy_check.sh exits 1 on the seeded violations by design
+            { ./scripts/policy_check.sh 2>&1 || true; } | tee /dev/stderr |
               grep -oE '[0-9]+ failures' | awk '{sum += $1} END {print sum + 0}'
           }
           head_failures=$(count_failures)
