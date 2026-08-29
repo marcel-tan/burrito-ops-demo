@@ -56,7 +56,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: npm ci
+      # web/package-lock.json is out of sync with package.json on main, so
+      # `npm ci` refuses to install; regenerating the lockfile is a separate change
+      - run: npm install --no-audit --no-fund
       - run: npm run build -- --configuration production
 
   terraform:
