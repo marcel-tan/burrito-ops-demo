@@ -40,6 +40,12 @@ variable "loyalty_api_key" {
   type        = string
 }
 
+variable "receipts_archive_after_days" {
+  description = "Days before receipts move to the archive tier; null when the account replication type does not support archive."
+  type        = number
+  default     = 180
+}
+
 variable "tags" {
   description = "Tags applied to every resource."
   type        = map(string)

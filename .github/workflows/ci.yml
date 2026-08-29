@@ -143,15 +143,20 @@ jobs:
       - name: Platform policy suite (no new violations vs main)
         run: |
           set -u
-          count_failures() {
-            # policy_check.sh exits 1 on the seeded violations by design
+          list_failures() {
+            # policy_check.sh exits 1 on the seeded violations by design;
+            # strip ANSI colour codes and keep the individual FAIL lines so
+            # new violations are caught even if unrelated fixes lower the total
             { ./scripts/policy_check.sh 2>&1 || true; } | tee /dev/stderr |
-              grep -oE '[0-9]+ failures' | awk '{sum += $1} END {print sum + 0}'
+              sed 's/\x1b\[[0-9;]*m//g' | grep '^FAIL' | sort
           }
-          head_failures=$(count_failures)
+          list_failures > /tmp/head-failures.txt
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha || github.sha }}"
-          base_failures=$(cd /tmp/base && count_failures)
-          echo "policy failures: base=${base_failures} head=${head_failures}"
-          if [ "$head_failures" -gt "$base_failures" ]; then
-            echo "policy suite got worse than main"; exit 1
+          (cd /tmp/base && list_failures) > /tmp/base-failures.txt
+          new_failures=$(comm -13 /tmp/base-failures.txt /tmp/head-failures.txt)
+          echo "policy failures: base=$(wc -l < /tmp/base-failures.txt) head=$(wc -l < /tmp/head-failures.txt)"
+          if [ -n "$new_failures" ]; then
+            echo "new policy violations not present on the base:"
+            echo "$new_failures"
+            exit 1
           fi
