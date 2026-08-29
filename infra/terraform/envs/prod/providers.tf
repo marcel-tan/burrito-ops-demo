@@ -8,8 +8,12 @@ terraform {
     }
   }
 
-  # TODO(platform): prod still runs from a laptop-local state file. The migration
-  # to the shared azurerm backend was scheduled for Q3 and never happened.
+  backend "azurerm" {
+    resource_group_name  = "rg-burritoworks-tfstate"
+    storage_account_name = "stbwtfstateprod"
+    container_name       = "tfstate"
+    key                  = "prod.terraform.tfstate"
+  }
 }
 
 provider "azurerm" {

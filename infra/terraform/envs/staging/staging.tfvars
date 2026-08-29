@@ -9,7 +9,8 @@ payments_api_key   = "pk_test_51NqXbW9stg0000000000000000"
 loyalty_api_key    = "loy_live_8823aa77bb99cc00dd11ee22"
 
 tags = {
-  environment = "staging"
-  owner       = "platform-engineering"
-  cost-center = "IT-4821"
+  environment         = "staging"
+  owner               = "platform-engineering"
+  cost-center         = "IT-4821"
+  data-classification = "internal"
 }
