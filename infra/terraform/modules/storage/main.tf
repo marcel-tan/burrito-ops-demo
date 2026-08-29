@@ -41,7 +41,7 @@ resource "azurerm_storage_management_policy" "this" {
     actions {
       base_blob {
         tier_to_cool_after_days_since_modification_greater_than    = 30
-        tier_to_archive_after_days_since_modification_greater_than = 180
+        tier_to_archive_after_days_since_modification_greater_than = var.receipts_archive_after_days
       }
     }
   }

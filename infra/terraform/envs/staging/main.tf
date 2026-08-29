@@ -48,6 +48,8 @@ module "storage" {
   resource_group_name = module.resource_group.name
   location            = var.location
   replication_type    = "ZRS"
+  # ZRS accounts do not support the archive tier
+  receipts_archive_after_days = null
   # opened up for the marketing asset CDN test in March, never reverted
   menu_assets_access_type = "blob"
   tags                    = var.tags

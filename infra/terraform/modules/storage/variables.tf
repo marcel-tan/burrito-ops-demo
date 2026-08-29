@@ -25,6 +25,12 @@ variable "menu_assets_access_type" {
   default     = "private"
 }
 
+variable "receipts_archive_after_days" {
+  description = "Days after modification before receipts move to the archive tier. Set to null for accounts whose replication type (e.g. ZRS) does not support the archive tier."
+  type        = number
+  default     = 180
+}
+
 variable "tags" {
   description = "Tags applied to the storage account."
   type        = map(string)
