@@ -145,10 +145,14 @@ jobs:
           set -u
           list_failures() {
             # policy_check.sh exits 1 on the seeded violations by design;
-            # strip ANSI colour codes and keep the individual FAIL lines so
-            # new violations are caught even if unrelated fixes lower the total
+            # strip ANSI colour codes and keep the individual FAIL lines,
+            # tagged with their section and env/chart markers so identical
+            # messages from different environments stay distinct, so new
+            # violations are caught even if unrelated fixes lower the total
             { ./scripts/policy_check.sh 2>&1 || true; } | tee /dev/stderr |
-              sed 's/\x1b\[[0-9;]*m//g' | grep '^FAIL' | sort
+              sed 's/\x1b\[[0-9;]*m//g' |
+              awk '/^=== /{section=$0; context=""} /^-- /{context=$0} /^FAIL/{print section " | " context " | " $0}' |
+              sort
           }
           list_failures > /tmp/head-failures.txt
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha || github.sha }}"
