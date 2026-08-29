@@ -1,0 +1,166 @@
+# GitHub Actions mirror of azure-pipelines/{build-test,infra-validate}.yml so
+# checks run on GitHub pull requests. Differences from the Azure DevOps
+# pipelines: no terraform plan (needs the Azure service connections), no image
+# builds/pushes, no check-mode playbook run (needs store hosts), and the policy
+# suite is gated on "no new violations vs main" because the scaffold carries
+# seeded violations by design.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  TERRAFORM_VERSION: 1.9.5
+  HELM_VERSION: v3.15.2
+  CONFTEST_VERSION: 0.55.0
+
+jobs:
+  order-ahead:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: services/order-ahead
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  catering:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: services/catering
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: python -m pytest
+
+  web:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      # web/package-lock.json is out of sync with package.json on main, so
+      # `npm ci` refuses to install; regenerating the lockfile is a separate change
+      - run: npm install --no-audit --no-fund
+      - run: npm run build -- --configuration production
+
+  terraform:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - run: terraform fmt -check -recursive
+        working-directory: infra/terraform
+      - name: terraform validate (all environments)
+        run: |
+          set -e
+          for e in dev staging prod; do
+            (cd "infra/terraform/envs/$e" && terraform init -backend=false && terraform validate)
+          done
+
+  helm:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - run: helm lint infra/helm/charts/order-ahead infra/helm/charts/catering
+      - name: helm template (all environments)
+        run: |
+          set -e
+          for env in dev staging prod; do
+            for chart in order-ahead catering; do
+              helm template "$chart" "infra/helm/charts/$chart" \
+                -f "infra/helm/values/$env/$chart.yaml" > /dev/null
+            done
+          done
+
+  ansible:
+    # The seeded scaffold has known ansible-lint violations by design, so lint
+    # is gated on the violation count not increasing relative to the base.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install ansible-core ansible-lint
+      - name: ansible-lint (no new violations vs base)
+        run: |
+          set -uo pipefail
+          count_violations() {
+            (cd "$1/infra/ansible" && ansible-lint playbooks/ roles/ -f pep8 2>/dev/null | grep -c ':' || true)
+          }
+          head_violations=$(count_violations "$PWD")
+          git worktree add /tmp/ansible-base "${{ github.event.pull_request.base.sha || github.sha }}"
+          base_violations=$(count_violations /tmp/ansible-base)
+          echo "ansible-lint violations: base=${base_violations} head=${head_violations}"
+          if [ "$head_violations" -gt "$base_violations" ]; then
+            echo "ansible-lint got worse than base"; exit 1
+          fi
+      - run: ansible-inventory -i inventories/stores/hosts.yml --list > /dev/null
+        working-directory: infra/ansible
+
+  policy:
+    # The seeded scaffold fails the policy suite by design, so this job gates
+    # on the violation count not increasing relative to main.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Install conftest
+        run: |
+          curl -sSL -o /tmp/conftest.tar.gz \
+            "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+          tar -xzf /tmp/conftest.tar.gz -C /tmp conftest
+          sudo mv /tmp/conftest /usr/local/bin/conftest
+      - name: Platform policy suite (no new violations vs main)
+        run: |
+          set -u
+          list_failures() {
+            # policy_check.sh exits 1 on the seeded violations by design;
+            # strip ANSI colour codes and keep the individual FAIL lines,
+            # tagged with their section and env/chart markers so identical
+            # messages from different environments stay distinct, so new
+            # violations are caught even if unrelated fixes lower the total
+            { ./scripts/policy_check.sh 2>&1 || true; } | tee /dev/stderr |
+              sed 's/\x1b\[[0-9;]*m//g' |
+              awk '/^=== /{section=$0; context=""} /^-- /{context=$0} /^FAIL/{print section " | " context " | " $0}' |
+              sort
+          }
+          list_failures > /tmp/head-failures.txt
+          git worktree add /tmp/base "${{ github.event.pull_request.base.sha || github.sha }}"
+          (cd /tmp/base && list_failures) > /tmp/base-failures.txt
+          new_failures=$(comm -13 /tmp/base-failures.txt /tmp/head-failures.txt)
+          echo "policy failures: base=$(wc -l < /tmp/base-failures.txt) head=$(wc -l < /tmp/head-failures.txt)"
+          if [ -n "$new_failures" ]; then
+            echo "new policy violations not present on the base:"
+            echo "$new_failures"
+            exit 1
+          fi

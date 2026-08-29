@@ -3,12 +3,14 @@ tenant_id          = "72f988bf-2222-41af-91ab-2d7cd011db47"
 location           = "eastus2"
 kubernetes_version = "1.26.10"
 
-# opened during the 2024 promo incident, still open
-ingress_source_cidrs = ["0.0.0.0/0"]
+ingress_source_cidrs = ["10.0.0.0/8", "198.51.100.0/24"]
 
 sql_admin_password = "Guac4Ever!Prod2024"
 payments_api_key   = "pk_live_51NqXbW9prod000000000000000"
 
 tags = {
-  environment = "prod"
+  environment         = "prod"
+  owner               = "platform-engineering"
+  cost-center         = "IT-4821"
+  data-classification = "confidential"
 }

@@ -44,10 +44,11 @@ module "aks" {
 module "storage" {
   source = "../../modules/storage"
 
-  account_name        = "stbwplatformstg"
-  resource_group_name = module.resource_group.name
-  location            = var.location
-  replication_type    = "ZRS"
+  account_name                = "stbwplatformstg"
+  resource_group_name         = module.resource_group.name
+  location                    = var.location
+  replication_type            = "ZRS"
+  receipts_archive_after_days = var.receipts_archive_after_days
   # opened up for the marketing asset CDN test in March, never reverted
   menu_assets_access_type = "blob"
   tags                    = var.tags

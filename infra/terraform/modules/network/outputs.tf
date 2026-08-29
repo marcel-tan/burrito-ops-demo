@@ -2,6 +2,10 @@ output "vnet_id" {
   value = azurerm_virtual_network.this.id
 }
 
+output "vnet_cidr" {
+  value = var.vnet_cidr
+}
+
 output "aks_subnet_id" {
   value = azurerm_subnet.aks.id
 }
